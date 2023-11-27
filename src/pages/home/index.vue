@@ -126,7 +126,7 @@ const handleDelete = async (item: DataItem) => {
 
     <var-popup position="bottom" v-model:show="popoverShow">
       <div
-        class="flex items-center bg-white px-4 py-4 border-0 border-t border-solid border-t-[#eff0f5]"
+        class="flex items-center px-4 py-4"
       >
         <var-form
           @submit="handleSubmit"
