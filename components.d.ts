@@ -9,5 +9,17 @@ declare module 'vue' {
   export interface GlobalComponents {
     AButton: typeof import('ant-design-vue/es')['Button']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
+    VarAppBar: typeof import('@varlet/ui')['_AppBarComponent']
+    VarButton: typeof import('@varlet/ui')['_ButtonComponent']
+    VarCell: typeof import('@varlet/ui')['_CellComponent']
+    VarCheckbox: typeof import('@varlet/ui')['_CheckboxComponent']
+    VarFab: typeof import('@varlet/ui')['_FabComponent']
+    VarForm: typeof import('@varlet/ui')['_FormComponent']
+    VarIcon: typeof import('@varlet/ui')['_IconComponent']
+    VarInput: typeof import('@varlet/ui')['_InputComponent']
+    VarList: typeof import('@varlet/ui')['_ListComponent']
+    VarMenu: typeof import('@varlet/ui')['_MenuComponent']
+    VarPopup: typeof import('@varlet/ui')['_PopupComponent']
+    VarSpace: typeof import('@varlet/ui')['_SpaceComponent']
   }
 }
