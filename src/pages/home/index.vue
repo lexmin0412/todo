@@ -4,6 +4,7 @@ import {StyleProvider, Themes} from "@varlet/ui";
 import {onMounted} from "vue";
 import OSSClient from "../../utils/oss";
 import {Dialog, Snackbar} from "@varlet/ui";
+import { DataItem } from '../../types'
 
 let currentTheme: any = null;
 
@@ -15,13 +16,13 @@ function toggleTheme() {
 
 const loading = ref(false);
 const finished = ref(false);
-const list = ref([]);
+const list = ref<Array<DataItem>([]);
 
 const popoverShow = ref(false);
 let ossClient = ref(null);
 
-const fetchList = async (ossClient) => {
-  const result = await ossClient.getList();
+const fetchList = async (ossClient: OSSClient) => {
+  const result = await ossClient?.getList();
   console.log("result", result.content.toString());
   list.value = JSON.parse(result.content.toString()).list;
   finished.value = true;
@@ -30,20 +31,18 @@ const fetchList = async (ossClient) => {
 
 onMounted(async () => {
   console.log(`the component is now mounted.`);
-  const ossConfig = JSON.parse(localStorage.getItem("oss-config"));
+  const ossConfig = JSON.parse(localStorage.getItem("oss-config") as string);
   ossClient.value = new OSSClient(ossConfig);
   fetchList(ossClient.value);
 });
 
 const handleSubmit = async () => {
-  console.log("inputValue", formData.inputValue);
-  await ossClient.value.add({
+  await ossClient.value?.add({
     id: Math.random(),
     content: formData.inputValue,
   });
   fetchList(ossClient.value);
   popoverShow.value = false;
-  console.log(popoverShow, "11");
 };
 
 const formData = reactive({
@@ -53,7 +52,7 @@ const form = ref(null);
 
 const toggleCheck = async (item) => {
   console.log("toggleCheck", item.id, item.done);
-  await ossClient.value.update(item.id, {
+  await ossClient.value?.update(item.id, {
     done: !item.done,
   });
   fetchList(ossClient.value);
@@ -66,7 +65,7 @@ const handleDelete = async (item) => {
     message: "操作后数据将无法恢复！",
   });
   if (action === "confirm") {
-    await ossClient.value.delete(item.id);
+    await ossClient.value?.delete(item.id);
     fetchList(ossClient.value);
     Snackbar.success("删除成功");
   }
@@ -108,7 +107,7 @@ const handleDelete = async (item) => {
     </var-app-bar>
 
     <div class="flex-1 overflow-auto">
-      <var-list :finished="finished" v-model:loading="loading" @load="load">
+      <var-list :finished="finished" v-model:loading="loading">
         <var-cell :key="item" v-for="item in list">
           <div class="flex items-center">
             <var-checkbox
