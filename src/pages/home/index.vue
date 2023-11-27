@@ -4,7 +4,7 @@ import {StyleProvider, Themes} from "@varlet/ui";
 import {onMounted} from "vue";
 import OSSClient from "../../utils/oss";
 import {Dialog, Snackbar} from "@varlet/ui";
-import { DataItem } from '../../types'
+import {DataItem} from "../../types";
 
 let currentTheme: any = null;
 
@@ -16,14 +16,13 @@ function toggleTheme() {
 
 const loading = ref(false);
 const finished = ref(false);
-const list = ref<Array<DataItem>([]);
+const list = ref<Array<DataItem>>([]);
 
 const popoverShow = ref(false);
-let ossClient = ref(null);
+let ossClient = ref<OSSClient>();
 
 const fetchList = async (ossClient: OSSClient) => {
   const result = await ossClient?.getList();
-  console.log("result", result.content.toString());
   list.value = JSON.parse(result.content.toString()).list;
   finished.value = true;
   loading.value = false;
@@ -38,10 +37,11 @@ onMounted(async () => {
 
 const handleSubmit = async () => {
   await ossClient.value?.add({
-    id: Math.random(),
+    id: `${Math.random()}`,
     content: formData.inputValue,
+    done: false
   });
-  fetchList(ossClient.value);
+  fetchList(ossClient.value as OSSClient);
   popoverShow.value = false;
 };
 
@@ -50,15 +50,16 @@ const formData = reactive({
 });
 const form = ref(null);
 
-const toggleCheck = async (item) => {
-  console.log("toggleCheck", item.id, item.done);
+const toggleCheck = async (item: DataItem) => {
+
   await ossClient.value?.update(item.id, {
+    content: item.content,
     done: !item.done,
   });
-  fetchList(ossClient.value);
+  fetchList(ossClient.value as OSSClient);
 };
 
-const handleDelete = async (item) => {
+const handleDelete = async (item: DataItem) => {
   console.log("handleDelete", item);
   const action = await Dialog({
     title: "删除待办",
@@ -66,7 +67,7 @@ const handleDelete = async (item) => {
   });
   if (action === "confirm") {
     await ossClient.value?.delete(item.id);
-    fetchList(ossClient.value);
+    fetchList(ossClient.value as OSSClient);
     Snackbar.success("删除成功");
   }
 };
