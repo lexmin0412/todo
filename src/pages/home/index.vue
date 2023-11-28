@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import {ref, reactive} from "vue";
-import {StyleProvider, Themes} from "@varlet/ui";
-import {onMounted} from "vue";
+import { ref, reactive } from "vue";
+import { StyleProvider, Themes } from "@varlet/ui";
+import { onMounted } from "vue";
 import OSSClient from "../../utils/oss";
-import {Dialog, Snackbar} from "@varlet/ui";
-import {DataItem} from "../../types";
+import { Dialog, Snackbar } from "@varlet/ui";
+import { DataItem } from "../../types";
 
 let currentTheme: any = null;
 
@@ -28,11 +28,18 @@ const fetchList = async (ossClient: OSSClient) => {
   loading.value = false;
 };
 
-onMounted(async () => {
-  console.log(`the component is now mounted.`);
+const initOSSClient = () => {
   const ossConfig = JSON.parse(localStorage.getItem("oss-config") as string);
+  if (!ossConfig) {
+    configPopupVisible.value = true
+  }
   ossClient.value = new OSSClient(ossConfig);
   fetchList(ossClient.value);
+}
+
+onMounted(async () => {
+  console.log(`the component is now mounted.`);
+  initOSSClient()
 });
 
 const handleSubmit = async () => {
@@ -71,6 +78,24 @@ const handleDelete = async (item: DataItem) => {
     Snackbar.success("删除成功");
   }
 };
+
+// 配置弹出框
+const configPopupVisible = ref(false)
+const configForm = ref(null)
+const configFormData = reactive({
+  region: "",
+  bucket: "",
+  accessKeyId: "",
+  accessKeySecret: ""
+});
+const handleConfigSubmit = async () => {
+  console.log('配置保存', configFormData)
+  localStorage.setItem('oss-config', JSON.stringify({
+    ...configFormData
+  }))
+  initOSSClient()
+  configPopupVisible.value = false;
+}
 </script>
 
 <template>
@@ -78,29 +103,23 @@ const handleDelete = async (item: DataItem) => {
     <var-app-bar title="待办清单">
       <template #left>
         <div class="flex mr-2">
-          <img
-            class="block w-8 h-8 rounded-2xl"
-            src="https://lexmin.oss-cn-hangzhou.aliyuncs.com/statics/common/24385370.jpeg"
-          />
+          <img class="block w-8 h-8 rounded-2xl"
+            src="https://lexmin.oss-cn-hangzhou.aliyuncs.com/statics/common/24385370.jpeg" />
           <!-- <var-button
-        color="transparent"
-        text-color="#fff"
-        round
-        text
-      >
-        <var-icon name="chevron-left" :size="24" />
-      </var-button> -->
+            color="transparent"
+            text-color="#fff"
+            round
+            text
+          >
+            <var-icon name="chevron-left" :size="24" />
+          </var-button> -->
         </div>
       </template>
 
       <template #right>
         <var-menu>
           <var-button color="transparent" text-color="#fff" round text>
-            <var-icon
-              v-if="currentTheme === null"
-              name="white-balance-sunny"
-              @click="toggleTheme"
-            />
+            <var-icon v-if="currentTheme === null" name="white-balance-sunny" @click="toggleTheme" />
             <var-icon v-else name="weather-night" @click="toggleTheme" />
           </var-button>
         </var-menu>
@@ -111,10 +130,7 @@ const handleDelete = async (item: DataItem) => {
       <var-list :finished="finished" v-model:loading="loading">
         <var-cell :key="item" v-for="item in list">
           <div class="flex items-center">
-            <var-checkbox
-              v-model="item.done"
-              @change="toggleCheck(item)"
-            ></var-checkbox>
+            <var-checkbox v-model="item.done" @change="toggleCheck(item)"></var-checkbox>
             <div class="flex-1 ellipsis-single">
               {{ item.content }}
             </div>
@@ -125,26 +141,30 @@ const handleDelete = async (item: DataItem) => {
     </div>
 
     <var-popup position="bottom" v-model:show="popoverShow">
-      <div
-        class="flex items-center px-4 py-4"
-      >
-        <var-form
-          @submit="handleSubmit"
-          class="w-full"
-          ref="form"
-          scroll-to-error="start"
-        >
-          <var-input
-            autoFocus
-            class="w-full"
-            variant="outlined"
-            placeholder="输入待办内容"
-            clearable
-            v-model="formData.inputValue"
-            textarea
-            :rules="[(v) => v.length > 0 || '文本不能为空']"
-          />
+      <div class="flex items-center px-4 py-4">
+        <var-form @submit="handleSubmit" class="w-full" ref="form" scroll-to-error="start">
+          <var-input autoFocus class="w-full" variant="outlined" placeholder="输入待办内容" clearable
+            v-model="formData.inputValue" textarea :rules="[(v) => v.length > 0 || '文本不能为空']" />
 
+          <var-button class="mt-4" block type="primary" native-type="submit">
+            提交
+          </var-button>
+        </var-form>
+      </div>
+    </var-popup>
+
+    <var-popup position="bottom" v-model:show="configPopupVisible">
+      <div class="flex items-center px-4 py-4">
+        <var-form @submit="handleConfigSubmit" class="w-full" ref="configForm" scroll-to-error="start">
+          <var-select placeholder="请选择地域" v-model="configFormData.region">
+            <var-option label="杭州" value="oss-cn-hangzhou" />
+            <var-option label="深圳" value="oss-cn-shenzhen" />
+            <var-option label="上海" value="oss-cn-shanghai" />
+            <var-option label="北京" value="oss-cn-beijing" />
+          </var-select>
+          <var-input placeholder="请输入 bucket" clearable v-model="configFormData.bucket" />
+          <var-input placeholder="请输入 accesskeyId" clearable v-model="configFormData.accessKeyId" />
+          <var-input placeholder="请输入 accesskeySecret" clearable v-model="configFormData.accessKeySecret" />
           <var-button class="mt-4" block type="primary" native-type="submit">
             提交
           </var-button>
