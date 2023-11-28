@@ -88,8 +88,10 @@ const configFormData = reactive({
   accessKeyId: "",
   accessKeySecret: ""
 });
-const handleConfigSubmit = async () => {
-  console.log('配置保存', configFormData)
+const handleConfigSubmit = async (isValid: boolean) => {
+  if (!isValid) {
+    return
+  }
   localStorage.setItem('oss-config', JSON.stringify({
     ...configFormData
   }))
@@ -153,18 +155,18 @@ const handleConfigSubmit = async () => {
       </div>
     </var-popup>
 
-    <var-popup position="bottom" v-model:show="configPopupVisible">
+    <var-popup position="bottom" :close-on-click-overlay="false" v-model:show="configPopupVisible">
       <div class="flex items-center px-4 py-4">
         <var-form @submit="handleConfigSubmit" class="w-full" ref="configForm" scroll-to-error="start">
-          <var-select placeholder="请选择地域" v-model="configFormData.region">
+          <var-select placeholder="请选择地域" v-model="configFormData.region" :rules="[(v) => !!v || '地域不能为空']">
             <var-option label="杭州" value="oss-cn-hangzhou" />
             <var-option label="深圳" value="oss-cn-shenzhen" />
             <var-option label="上海" value="oss-cn-shanghai" />
             <var-option label="北京" value="oss-cn-beijing" />
           </var-select>
-          <var-input placeholder="请输入 bucket" clearable v-model="configFormData.bucket" />
-          <var-input placeholder="请输入 accesskeyId" clearable v-model="configFormData.accessKeyId" />
-          <var-input placeholder="请输入 accesskeySecret" clearable v-model="configFormData.accessKeySecret" />
+          <var-input placeholder="请输入 bucket" clearable v-model="configFormData.bucket" :rules="[(v) => !!v || 'bucket 不能为空']" />
+          <var-input placeholder="请输入 accesskeyId" clearable v-model="configFormData.accessKeyId" :rules="[(v) => !!v || 'accessKeyId 不能为空']" />
+          <var-input placeholder="请输入 accesskeySecret" clearable v-model="configFormData.accessKeySecret" :rules="[(v) => !!v || 'accessKeySecret 不能为空']" />
           <var-button class="mt-4" block type="primary" native-type="submit">
             提交
           </var-button>
