@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@lexmin0412/wc-vue": "^0.0.10",
     "@varlet/ui": "^2.19.2",
     "ali-oss": "^6.18.1",
     "ant-design-vue": "4.x",

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, reactive, isRef } from "vue";
+import { ref, reactive } from "vue";
 import { StyleProvider, Themes } from "@varlet/ui";
 import { onMounted } from "vue";
 import OSSClient from "../../utils/oss";
 import { Dialog, Snackbar } from "@varlet/ui";
+import { LexminFooter } from "@lexmin0412/wc-vue";
 import { DataItem } from "../../types";
 
 let currentTheme: any = null;
@@ -189,5 +190,7 @@ const refresh = async() => {
 
       <!-- 浮动操作按钮 -->
       <var-fab type="primary" @click="popoverShow = true" />
+
+			<LexminFooter />
     </div>
   </var-pull-refresh></template>
