@@ -28,7 +28,6 @@ const fetchList = async (ossClient: OSSClient, type?: DataItem['type']) => {
   const result = await ossClient?.getList();
   const fullList = JSON.parse(result.content.toString()).list
   const compareType = type || active.value
-  console.log('fullList', fullList)
   list.value = (fullList as DataItem[])?.filter((item: DataItem) => {
     return item.type === compareType
   }).sort((prev, cur)=>{
