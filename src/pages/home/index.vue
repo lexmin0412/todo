@@ -12,7 +12,6 @@ let currentTheme: any = null;
 function toggleTheme() {
   currentTheme = currentTheme ? null : Themes.dark;
   StyleProvider(currentTheme);
-  console.log("currentTheme", currentTheme);
 }
 
 const loading = ref(false);
@@ -22,9 +21,13 @@ const list = ref<Array<DataItem>>([]);
 const popoverShow = ref(false);
 let ossClient = ref<OSSClient>();
 
-const fetchList = async (ossClient: OSSClient) => {
+const fetchList = async (ossClient: OSSClient, type?: DataItem['type']) => {
   const result = await ossClient?.getList();
-  list.value = JSON.parse(result.content.toString()).list;
+  const fullList = JSON.parse(result.content.toString()).list
+  const compareType = type || active.value
+  list.value = fullList?.filter((item: DataItem) => {
+    return item.type === compareType
+  });
   finished.value = true;
   loading.value = false;
 };
@@ -39,36 +42,63 @@ const initOSSClient = () => {
 }
 
 onMounted(async () => {
-  console.log(`the component is now mounted.`);
   initOSSClient()
 });
 
-const handleSubmit = async () => {
-  await ossClient.value?.add({
-    id: `${Math.random()}`,
-    content: formData.inputValue,
-    done: false
-  });
+const handleSubmit = async (success: boolean) => {
+  if (!success) {
+    return 
+  }
+  if (formData.id) {
+    await ossClient.value?.update(formData.id, {
+      content: formData.inputValue,
+      type: formData.type as DataItem['type'],
+      done: formData.done || false
+    });
+  } else {
+    await ossClient.value?.add({
+      id: `${Math.random()}`,
+      content: formData.inputValue,
+      type: formData.type as DataItem['type'],
+      done: formData.done || false
+    });
+  }
   fetchList(ossClient.value as OSSClient);
-  popoverShow.value = false;
+  closeEditPopup()
 };
 
-const formData = reactive({
+const formData = reactive<{
+  id: string | undefined
+  inputValue: string
+  type: DataItem['type'] | undefined
+  done: boolean
+}>({
+  id: undefined,
   inputValue: "",
+  type: undefined,
+  done: false
 });
 const form = ref(null);
+
+const closeEditPopup = () => {
+  popoverShow.value = false;
+  formData.id = undefined
+  formData.inputValue = ''
+  formData.type = undefined
+  formData.done = false
+}
 
 const toggleCheck = async (item: DataItem) => {
 
   await ossClient.value?.update(item.id, {
     content: item.content,
     done: !item.done,
+    type: item.type
   });
   fetchList(ossClient.value as OSSClient);
 };
 
 const handleDelete = async (item: DataItem) => {
-  console.log("handleDelete", item);
   const action = await Dialog({
     title: "删除待办",
     message: "操作后数据将无法恢复！",
@@ -103,29 +133,48 @@ const handleConfigSubmit = async (isValid: boolean) => {
 
 // 下拉刷新 start
 const isRefresh = ref(false)
-const refresh = async() => {
+const refresh = async () => {
   await fetchList(ossClient.value as OSSClient)
   isRefresh.value = false
 }
 // 下拉刷新 end
+
+// tab 切换 start
+const active = ref('work')
+
+const handleTabChange = (newTab: string | number) => {
+  fetchList(ossClient.value as OSSClient, newTab as DataItem['type'])
+}
+// tab 切换 end
+
+const value = ref('work')
+
+const handleItemClick = (item: DataItem) => {
+  popoverShow.value = true
+  formData.id = item.id
+  formData.inputValue = item.content
+  formData.type = item.type
+  formData.done = item.done
+}
 </script>
 
 <template>
   <var-pull-refresh v-model="isRefresh" @refresh="refresh">
     <div class="h-screen overflow-hidden flex flex-col">
+      <!-- 头部 start -->
       <var-app-bar title="待办清单">
         <template #left>
           <div class="flex mr-2">
             <img class="block w-8 h-8 rounded-2xl"
               src="https://lexmin.oss-cn-hangzhou.aliyuncs.com/statics/common/24385370.jpeg" />
             <!-- <var-button
-              color="transparent"
-              text-color="#fff"
-              round
-              text
-            >
-              <var-icon name="chevron-left" :size="24" />
-            </var-button> -->
+                color="transparent"
+                text-color="#fff"
+                round
+                text
+              >
+                <var-icon name="chevron-left" :size="24" />
+              </var-button> -->
           </div>
         </template>
 
@@ -138,13 +187,22 @@ const refresh = async() => {
           </var-menu>
         </template>
       </var-app-bar>
+      <!-- 头部 end -->
 
+      <!-- Tab 切换 start -->
+      <var-tabs v-model:active="active" @change="handleTabChange">
+        <var-tab name='work'>工作</var-tab>
+        <var-tab name="life">生活</var-tab>
+      </var-tabs>
+      <!-- Tab 切换 end -->
+
+      <!-- 列表 start -->
       <div class="flex-1 overflow-auto">
         <var-list :finished="finished" v-model:loading="loading">
           <var-cell :key="item" v-for="item in list">
             <div class="flex items-center">
               <var-checkbox v-model="item.done" @change="toggleCheck(item)"></var-checkbox>
-              <div class="flex-1 ellipsis-single">
+              <div class="flex-1 ellipsis-single" @click="() => handleItemClick(item)">
                 {{ item.content }}
               </div>
               <var-icon name="delete" @click="handleDelete(item)" />
@@ -152,12 +210,19 @@ const refresh = async() => {
           </var-cell>
         </var-list>
       </div>
+      <!-- 列表 end -->
 
-      <var-popup position="bottom" v-model:show="popoverShow">
+      <!-- 新建事项 Popup start -->
+      <var-popup position="bottom" v-model:show="popoverShow" @close="closeEditPopup">
         <div class="flex items-center px-4 py-4">
           <var-form @submit="handleSubmit" class="w-full" ref="form" scroll-to-error="start">
             <var-input autoFocus class="w-full" variant="outlined" placeholder="输入待办内容" clearable
               v-model="formData.inputValue" textarea :rules="[(v) => v.length > 0 || '文本不能为空']" />
+
+            <var-select placeholder="请选择类型" v-model="formData.type" clearable :rules="[(v) => !!v || '类型不能为空']">
+              <var-option value="work" label="工作" />
+              <var-option value="life" label="生活" />
+            </var-select>
 
             <var-button class="mt-4" block type="primary" native-type="submit">
               提交
@@ -165,7 +230,9 @@ const refresh = async() => {
           </var-form>
         </div>
       </var-popup>
+      <!-- 新建事项 Popup end -->
 
+      <!-- OSS 配置 Popup start -->
       <var-popup position="bottom" :close-on-click-overlay="false" v-model:show="configPopupVisible">
         <div class="flex items-center px-4 py-4">
           <var-form @submit="handleConfigSubmit" class="w-full" ref="configForm" scroll-to-error="start">
@@ -187,10 +254,13 @@ const refresh = async() => {
           </var-form>
         </div>
       </var-popup>
+      <!-- OSS 配置 Popup end -->
 
       <!-- 浮动操作按钮 -->
       <var-fab type="primary" @click="popoverShow = true" />
 
-			<LexminFooter />
+      <!-- 固定底部 -->
+      <LexminFooter />
     </div>
-  </var-pull-refresh></template>
+  </var-pull-refresh>
+</template>
