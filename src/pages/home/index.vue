@@ -19,7 +19,13 @@ const TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss'
 
 const loading = ref(false);
 const finished = ref(false);
-const list = ref<Array<DataItem>>([]);
+const list = ref<{
+	unDone: Array<DataItem>
+	done: Array<DataItem>
+}>({
+	unDone: [],
+	done: []
+});
 
 const popoverShow = ref(false);
 let ossClient = ref<OSSClient>();
@@ -28,11 +34,13 @@ const fetchList = async (ossClient: OSSClient, type?: DataItem['type']) => {
   const result = await ossClient?.getList();
   const fullList = JSON.parse(result.content.toString()).list
   const compareType = type || active.value
-  list.value = (fullList as DataItem[])?.filter((item: DataItem) => {
+	const displayList = (fullList as DataItem[])?.filter((item: DataItem) => {
     return item.type === compareType
   }).sort((prev, cur)=>{
     return dayjs(prev.lastUpdatedTime).isBefore(dayjs(cur.lastUpdatedTime)) ? 1 : -1
   })
+  list.value.done = displayList.filter((item)=>item.done)
+	list.value.unDone = displayList.filter((item)=>!item.done)
   finished.value = true;
   loading.value = false;
 };
@@ -52,7 +60,7 @@ onMounted(async () => {
 
 const handleSubmit = async (success: boolean) => {
   if (!success) {
-    return 
+    return
   }
   if (formData.id) {
     await ossClient.value?.update(formData.id, {
@@ -215,8 +223,9 @@ const handleItemClick = (item: DataItem) => {
 
       <!-- 列表 start -->
       <div class="flex-1 overflow-auto">
+				<div class="px-3 pt-3 font-semibold">待办</div>
         <var-list :finished="finished" v-model:loading="loading">
-          <var-cell :key="item" v-for="item in list">
+          <var-cell :key="item" v-for="item in list.unDone">
             <div class="flex items-center">
               <var-checkbox v-model="item.done" @change="toggleCheck(item)"></var-checkbox>
               <div class="flex-1 ellipsis-single" @click="() => handleItemClick(item)">
@@ -226,6 +235,19 @@ const handleItemClick = (item: DataItem) => {
             </div>
           </var-cell>
         </var-list>
+
+				<div class="px-3 pt-3 font-semibold">已办</div>
+				<var-list :finished="finished" v-model:loading="loading">
+					<var-cell :key="item" v-for="item in list.done">
+						<div class="flex items-center">
+							<var-checkbox v-model="item.done" @change="toggleCheck(item)"></var-checkbox>
+							<div class="flex-1 ellipsis-single" @click="() => handleItemClick(item)">
+								{{ item.content }}
+							</div>
+							<var-icon name="delete" @click="handleDelete(item)" />
+						</div>
+					</var-cell>
+				</var-list>
       </div>
       <!-- 列表 end -->
 
