@@ -178,8 +178,6 @@ const handleTabChange = (newTab: string | number) => {
 };
 // tab 切换 end
 
-const value = ref("work");
-
 const handleItemClick = (item: DataItem) => {
   popoverShow.value = true;
   formData.id = item.id;
@@ -231,6 +229,7 @@ const showDoneData = ref(true); //  已办数据是否展示
       <!-- Tab 切换 start -->
       <var-tabs v-model:active="active" @change="handleTabChange">
         <var-tab name="work">工作</var-tab>
+        <var-tab name="study">学习</var-tab>
         <var-tab name="life">生活</var-tab>
       </var-tabs>
       <!-- Tab 切换 end -->
@@ -310,6 +309,7 @@ const showDoneData = ref(true); //  已办数据是否展示
               :rules="[(v) => !!v || '类型不能为空']"
             >
               <var-option value="work" label="工作" />
+              <var-option value="study" label="学习" />
               <var-option value="life" label="生活" />
             </var-select>
 

@@ -2,7 +2,7 @@ export interface DataItem {
 	id: string
 	content: string
 	done: boolean
-	type: 'work' | 'life'
+	type: 'work' | 'study' | 'life'
 	/**
 	 * 创建时间
 	 */
