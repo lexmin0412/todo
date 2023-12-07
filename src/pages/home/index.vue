@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive } from "vue";
+import dayjs from 'dayjs'
 import { StyleProvider, Themes } from "@varlet/ui";
 import { onMounted } from "vue";
 import OSSClient from "../../utils/oss";
@@ -14,6 +15,8 @@ function toggleTheme() {
   StyleProvider(currentTheme);
 }
 
+const TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss'
+
 const loading = ref(false);
 const finished = ref(false);
 const list = ref<Array<DataItem>>([]);
@@ -25,9 +28,12 @@ const fetchList = async (ossClient: OSSClient, type?: DataItem['type']) => {
   const result = await ossClient?.getList();
   const fullList = JSON.parse(result.content.toString()).list
   const compareType = type || active.value
-  list.value = fullList?.filter((item: DataItem) => {
+  console.log('fullList', fullList)
+  list.value = (fullList as DataItem[])?.filter((item: DataItem) => {
     return item.type === compareType
-  });
+  }).sort((prev, cur)=>{
+    return dayjs(prev.lastUpdatedTime).isBefore(dayjs(cur.lastUpdatedTime)) ? 1 : -1
+  })
   finished.value = true;
   loading.value = false;
 };
@@ -53,14 +59,18 @@ const handleSubmit = async (success: boolean) => {
     await ossClient.value?.update(formData.id, {
       content: formData.inputValue,
       type: formData.type as DataItem['type'],
-      done: formData.done || false
+      done: formData.done || false,
+      createdTime: formData.createdTime,
+      lastUpdatedTime: dayjs().format(TIME_FORMAT)
     });
   } else {
     await ossClient.value?.add({
       id: `${Math.random()}`,
       content: formData.inputValue,
       type: formData.type as DataItem['type'],
-      done: formData.done || false
+      done: formData.done || false,
+      createdTime: dayjs().format(TIME_FORMAT),
+      lastUpdatedTime: dayjs().format(TIME_FORMAT)
     });
   }
   fetchList(ossClient.value as OSSClient);
@@ -71,12 +81,16 @@ const formData = reactive<{
   id: string | undefined
   inputValue: string
   type: DataItem['type'] | undefined
-  done: boolean
+  done: boolean,
+  createdTime: string
+  lastUpdatedTime: string
 }>({
   id: undefined,
   inputValue: "",
   type: undefined,
-  done: false
+  done: false,
+  createdTime: '',
+  lastUpdatedTime: ''
 });
 const form = ref(null);
 
@@ -86,6 +100,8 @@ const closeEditPopup = () => {
   formData.inputValue = ''
   formData.type = undefined
   formData.done = false
+  formData.createdTime = ''
+  formData.lastUpdatedTime = ''
 }
 
 const toggleCheck = async (item: DataItem) => {
@@ -93,7 +109,9 @@ const toggleCheck = async (item: DataItem) => {
   await ossClient.value?.update(item.id, {
     content: item.content,
     done: !item.done,
-    type: item.type
+    type: item.type,
+    createdTime: item.createdTime,
+    lastUpdatedTime: item.lastUpdatedTime,
   });
   fetchList(ossClient.value as OSSClient);
 };
