@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import {ref, reactive} from "vue";
-import dayjs from "dayjs";
+import dayjs from 'dayjs'
 import {StyleProvider, Themes} from "@varlet/ui";
 import {onMounted} from "vue";
 import OSSClient from "../../utils/oss";
 import {Dialog, Snackbar} from "@varlet/ui";
 import {LexminFooter} from "@lexmin0412/wc-vue";
-import {DataItem} from "../../types";
+import {DataItem, UserCode, UserItem, ListWithUserItems} from "../../types";
 
 let currentTheme: any = null;
 
@@ -20,8 +20,8 @@ const TIME_FORMAT = "YYYY-MM-DD HH:mm:ss";
 const loading = ref(false);
 const finished = ref(false);
 const list = ref<{
-  unDone: Array<DataItem>;
-  done: Array<DataItem>;
+  unDone: ListWithUserItems;
+  done: ListWithUserItems;
 }>({
   unDone: [],
   done: [],
@@ -33,8 +33,8 @@ let ossClient = ref<OSSClient>();
 const fetchList = async (ossClient: OSSClient, type?: DataItem["type"]) => {
   const result = await ossClient?.getList();
   const fullList = JSON.parse(result.content.toString()).list;
-  const compareType = type || active.value;
-  const displayList = (fullList as DataItem[])
+  const compareType = type || activeTab.value;
+  const displayList: ListWithUserItems = (fullList as DataItem[])
     ?.filter((item: DataItem) => {
       return item.type === compareType;
     })
@@ -42,19 +42,35 @@ const fetchList = async (ossClient: OSSClient, type?: DataItem["type"]) => {
       return dayjs(prev.lastUpdatedTime).isBefore(dayjs(cur.lastUpdatedTime))
         ? 1
         : -1;
-    });
+    })
+    .map((item) => {
+      return {
+        ...item,
+        userItems: item.users?.map((userCode) => {
+          return userList.value.find((ele) => ele.code === userCode);
+        }) as UserItem[]
+      };
+    })
   list.value.done = displayList.filter((item) => item.done);
   list.value.unDone = displayList.filter((item) => !item.done);
   finished.value = true;
   loading.value = false;
 };
 
-const initOSSClient = () => {
+const userList = ref<UserItem[]>([]);
+const fetchUsers = async (ossClient: OSSClient) => {
+  const result = await ossClient?.getUsers();
+  const parsedList = JSON.parse(result.content.toString()).list;
+  userList.value = parsedList;
+};
+
+const initOSSClient = async () => {
   const ossConfig = JSON.parse(localStorage.getItem("oss-config") as string);
   if (!ossConfig) {
     configPopupVisible.value = true;
   }
   ossClient.value = new OSSClient(ossConfig);
+  await fetchUsers(ossClient.value);
   fetchList(ossClient.value);
 };
 
@@ -73,6 +89,7 @@ const handleSubmit = async (success: boolean) => {
       done: formData.done || false,
       createdTime: formData.createdTime,
       lastUpdatedTime: dayjs().format(TIME_FORMAT),
+      users: formData.users,
     });
   } else {
     await ossClient.value?.add({
@@ -82,6 +99,7 @@ const handleSubmit = async (success: boolean) => {
       done: formData.done || false,
       createdTime: dayjs().format(TIME_FORMAT),
       lastUpdatedTime: dayjs().format(TIME_FORMAT),
+      users: formData.users,
     });
   }
   fetchList(ossClient.value as OSSClient);
@@ -95,6 +113,7 @@ const formData = reactive<{
   done: boolean;
   createdTime: string;
   lastUpdatedTime: string;
+  users: UserCode[];
 }>({
   id: undefined,
   inputValue: "",
@@ -102,6 +121,7 @@ const formData = reactive<{
   done: false,
   createdTime: "",
   lastUpdatedTime: "",
+  users: [],
 });
 const form = ref(null);
 
@@ -113,6 +133,7 @@ const closeEditPopup = () => {
   formData.done = false;
   formData.createdTime = "";
   formData.lastUpdatedTime = "";
+  formData.users = [];
 };
 
 const toggleCheck = async (item: DataItem) => {
@@ -122,6 +143,7 @@ const toggleCheck = async (item: DataItem) => {
     type: item.type,
     createdTime: item.createdTime,
     lastUpdatedTime: item.lastUpdatedTime,
+    users: item.users,
   });
   fetchList(ossClient.value as OSSClient);
 };
@@ -171,7 +193,7 @@ const refresh = async () => {
 // 下拉刷新 end
 
 // tab 切换 start
-const active = ref("work");
+const activeTab = ref<DataItem["type"]>("work");
 
 const handleTabChange = (newTab: string | number) => {
   fetchList(ossClient.value as OSSClient, newTab as DataItem["type"]);
@@ -184,9 +206,15 @@ const handleItemClick = (item: DataItem) => {
   formData.inputValue = item.content;
   formData.type = item.type;
   formData.done = item.done;
+  formData.users = item.users || [];
 };
 
 const showDoneData = ref(true); //  已办数据是否展示
+
+const handleAdd = () => {
+  popoverShow.value = true;
+  formData.type = activeTab.value;
+};
 </script>
 
 <template>
@@ -227,7 +255,7 @@ const showDoneData = ref(true); //  已办数据是否展示
       <!-- 头部 end -->
 
       <!-- Tab 切换 start -->
-      <var-tabs v-model:active="active" @change="handleTabChange">
+      <var-tabs v-model:active="activeTab" @change="handleTabChange">
         <var-tab name="work">工作</var-tab>
         <var-tab name="study">学习</var-tab>
         <var-tab name="life">生活</var-tab>
@@ -245,11 +273,23 @@ const showDoneData = ref(true); //  已办数据是否展示
                 @change="toggleCheck(item)"
               ></var-checkbox>
               <div
-                class="flex-1 ellipsis-single"
+                class="flex-1 ellipsis-single flex items-center"
                 @click="() => handleItemClick(item)"
               >
-                {{ item.content }}
+                <div class="mr-2 flex-1 overflow-hidden ellipsis-single">
+                  {{ item.content }}
+                </div>
+                <template v-for="ele in item.userItems || []">
+                  <var-image
+                    class="mr-2"
+                    width="28px"
+                    height="28px"
+                    radius="14px"
+                    :src="ele.avatar"
+                  />
+                </template>
               </div>
+
               <var-icon name="delete" @click="handleDelete(item)" />
             </div>
           </var-cell>
@@ -258,7 +298,11 @@ const showDoneData = ref(true); //  已办数据是否展示
         <div class="px-3 pt-3 font-semibold flex items-center">
           已办 <var-switch v-model="showDoneData" class="ml-2" />
         </div>
-        <var-list :hidden="!showDoneData" :finished="finished" v-model:loading="loading">
+        <var-list
+          :hidden="!showDoneData"
+          :finished="finished"
+          v-model:loading="loading"
+        >
           <var-cell :key="item" v-for="item in list.done">
             <div class="flex items-center">
               <var-checkbox
@@ -266,10 +310,21 @@ const showDoneData = ref(true); //  已办数据是否展示
                 @change="toggleCheck(item)"
               ></var-checkbox>
               <div
-                class="flex-1 ellipsis-single"
+                class="flex-1 ellipsis-single flex items-center"
                 @click="() => handleItemClick(item)"
               >
-                {{ item.content }}
+                <div class="mr-2 flex-1 overflow-hidden ellipsis-single">
+                  {{ item.content }}
+                </div>
+                <template v-for="ele in item.userItems || []">
+                  <var-image
+                    class="mr-2"
+                    width="28px"
+                    height="28px"
+                    radius="14px"
+                    :src="ele.avatar"
+                  />
+                </template>
               </div>
               <var-icon name="delete" @click="handleDelete(item)" />
             </div>
@@ -303,6 +358,7 @@ const showDoneData = ref(true); //  已办数据是否展示
             />
 
             <var-select
+              v-if="!activeTab"
               placeholder="请选择类型"
               v-model="formData.type"
               clearable
@@ -311,6 +367,17 @@ const showDoneData = ref(true); //  已办数据是否展示
               <var-option value="work" label="工作" />
               <var-option value="study" label="学习" />
               <var-option value="life" label="生活" />
+            </var-select>
+
+            <var-select
+              multiple
+              placeholder="请选择用户"
+              v-model="formData.users"
+              clearable
+              :rules="[(v) => !!v.length || '用户不能为空']"
+            >
+              <var-option value="viola" label="小黄" />
+              <var-option value="lexmin" label="小张" />
             </var-select>
 
             <var-button class="mt-4" block type="primary" native-type="submit">
@@ -371,7 +438,7 @@ const showDoneData = ref(true); //  已办数据是否展示
       <!-- OSS 配置 Popup end -->
 
       <!-- 浮动操作按钮 -->
-      <var-fab type="primary" @click="popoverShow = true" />
+      <var-fab type="primary" @click="handleAdd" />
 
       <!-- 固定底部 -->
       <LexminFooter />

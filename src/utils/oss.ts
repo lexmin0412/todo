@@ -29,6 +29,17 @@ class OssClient {
 		})
 	}
 
+	/**
+	 * 获取用户列表
+	 */
+	getUsers() {
+		return this.store.get('apis/common/users.json', undefined, {
+			headers: {
+				'Content-type': 'application/json'
+			}
+		})
+	}
+
 	async add(newItem: DataItem) {
 		const res = await this.getList()
 		const list = JSON.parse(res.content.toString()).list

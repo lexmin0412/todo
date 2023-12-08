@@ -1,3 +1,12 @@
+
+export type UserCode = 'viola' | 'lexmin'
+
+export interface UserItem {
+	code: UserCode
+	name: string
+	avatar: string
+}
+
 export interface DataItem {
 	id: string
 	content: string
@@ -11,4 +20,15 @@ export interface DataItem {
 	 * 最后更新时间
 	 */
 	lastUpdatedTime: string
+	/**
+	 * 指定用户
+	 */
+	users: UserCode[]
 }
+
+/**
+ * 扩展了 userItems 属性的事项列表
+ */
+export type ListWithUserItems = Array<DataItem & {
+	userItems: UserItem[]
+}>
