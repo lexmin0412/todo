@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref, reactive} from "vue";
-import dayjs from 'dayjs'
+import dayjs from "dayjs";
 import {StyleProvider, Themes} from "@varlet/ui";
 import {onMounted} from "vue";
 import OSSClient from "../../utils/oss";
@@ -8,11 +8,11 @@ import {Dialog, Snackbar} from "@varlet/ui";
 import {LexminFooter} from "@lexmin0412/wc-vue";
 import {DataItem, UserCode, UserItem, ListWithUserItems} from "../../types";
 
-let currentTheme: any = null;
+const currentTheme = ref();
 
 function toggleTheme() {
-  currentTheme = currentTheme ? null : Themes.dark;
-  StyleProvider(currentTheme);
+  currentTheme.value = currentTheme.value ? null : Themes.dark;
+  StyleProvider(currentTheme.value);
 }
 
 const TIME_FORMAT = "YYYY-MM-DD HH:mm:ss";
@@ -39,7 +39,7 @@ const fetchList = async (ossClient: OSSClient, type?: DataItem["type"]) => {
       return item.type === compareType;
     })
     .sort((prev, cur) => {
-      return dayjs(prev.lastUpdatedTime).isBefore(dayjs(cur.lastUpdatedTime))
+      return dayjs(prev[currentSort.value]).isBefore(dayjs(cur[currentSort.value]))
         ? 1
         : -1;
     })
@@ -48,9 +48,9 @@ const fetchList = async (ossClient: OSSClient, type?: DataItem["type"]) => {
         ...item,
         userItems: item.users?.map((userCode) => {
           return userList.value.find((ele) => ele.code === userCode);
-        }) as UserItem[]
+        }) as UserItem[],
       };
-    })
+    });
   list.value.done = displayList.filter((item) => item.done);
   list.value.unDone = displayList.filter((item) => !item.done);
   finished.value = true;
@@ -215,6 +215,12 @@ const handleAdd = () => {
   popoverShow.value = true;
   formData.type = activeTab.value;
 };
+
+const go2Github = () => {
+  window.open("https://github.com/lexmin0412/todo");
+};
+
+const currentSort = ref<'createdTime' | 'lastUpdatedTime'>('createdTime')
 </script>
 
 <template>
@@ -249,6 +255,19 @@ const handleAdd = () => {
               />
               <var-icon v-else name="weather-night" @click="toggleTheme" />
             </var-button>
+            <var-menu-select v-model="currentSort" @update:model-value="()=>fetchList(ossClient as OSSClient)">
+              <var-button color="transparent" text-color="#fff" round text>
+                <var-icon name="cog-outline" />
+              </var-button>
+
+              <template #options>
+                <var-menu-option value="createdTime" label="创建时间" />
+                <var-menu-option value="lastUpdatedTime" label="更新时间" />
+              </template>
+            </var-menu-select>
+            <var-button color="transparent" text-color="#fff" round text>
+              <var-icon name="github" @click="go2Github" />
+            </var-button>
           </var-menu>
         </template>
       </var-app-bar>
@@ -280,11 +299,7 @@ const handleAdd = () => {
                   {{ item.content }}
                 </div>
                 <template v-for="ele in item.userItems || []">
-                  <var-avatar
-                    class="mr-2"
-										size="mini"
-                    :src="ele.avatar"
-                  />
+                  <var-avatar class="mr-2" size="mini" :src="ele.avatar" />
                 </template>
               </div>
 
@@ -315,11 +330,7 @@ const handleAdd = () => {
                   {{ item.content }}
                 </div>
                 <template v-for="ele in item.userItems || []">
-                  <var-avatar
-										size="mini"
-                    class="mr-2"
-                    :src="ele.avatar"
-                  />
+                  <var-avatar size="mini" class="mr-2" :src="ele.avatar" />
                 </template>
               </div>
               <var-icon name="delete" @click="handleDelete(item)" />
