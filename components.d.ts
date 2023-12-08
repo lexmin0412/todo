@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     VarAppBar: typeof import('@varlet/ui')['_AppBarComponent']
+    VarAvatar: typeof import('@varlet/ui')['_AvatarComponent']
     VarButton: typeof import('@varlet/ui')['_ButtonComponent']
     VarCell: typeof import('@varlet/ui')['_CellComponent']
     VarCheckbox: typeof import('@varlet/ui')['_CheckboxComponent']

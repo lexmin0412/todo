@@ -280,11 +280,9 @@ const handleAdd = () => {
                   {{ item.content }}
                 </div>
                 <template v-for="ele in item.userItems || []">
-                  <var-image
+                  <var-avatar
                     class="mr-2"
-                    width="28px"
-                    height="28px"
-                    radius="14px"
+										size="mini"
                     :src="ele.avatar"
                   />
                 </template>
@@ -317,11 +315,9 @@ const handleAdd = () => {
                   {{ item.content }}
                 </div>
                 <template v-for="ele in item.userItems || []">
-                  <var-image
+                  <var-avatar
+										size="mini"
                     class="mr-2"
-                    width="28px"
-                    height="28px"
-                    radius="14px"
                     :src="ele.avatar"
                   />
                 </template>
