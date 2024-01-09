@@ -14,7 +14,6 @@ const today = dayjs().format('YYYY-MM-DD')
 const calendarApp = ref<any>(null)
 
 const loadData = async () => {
-    console.log('loadData', props.data)
     calendarApp.value = createCalendar({
         views: [viewMonthGrid, viewMonthAgenda, viewWeek, viewDay],
         datePicker: {
