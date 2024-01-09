@@ -11,4 +11,8 @@ export interface DataItem {
 	 * 最后更新时间
 	 */
 	lastUpdatedTime: string
+	/**
+	 * 用户列表
+	 */
+	users?: string[]
 }

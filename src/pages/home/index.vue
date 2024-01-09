@@ -7,6 +7,7 @@ import OSSClient from "../../utils/oss";
 import { Dialog, Snackbar } from "@varlet/ui";
 import { LexminFooter } from "@lexmin0412/wc-vue";
 import { DataItem } from "../../types";
+import Schedule from './../../components/schedule/index.vue'
 
 let currentTheme: any = null;
 
@@ -15,11 +16,20 @@ function toggleTheme() {
   StyleProvider(currentTheme);
 }
 
+function toggleViewMode() {
+  if (viewMode.value === 'list') {
+    viewMode.value = 'calender'
+  } else {
+    viewMode.value = 'list'
+  }
+}
+
 const TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss'
 
 const loading = ref(false);
 const finished = ref(false);
 const list = ref<Array<DataItem>>([]);
+const viewMode = ref<'list' | 'calender'>('list')
 
 const popoverShow = ref(false);
 let ossClient = ref<OSSClient>();
@@ -30,7 +40,7 @@ const fetchList = async (ossClient: OSSClient, type?: DataItem['type']) => {
   const compareType = type || active.value
   list.value = (fullList as DataItem[])?.filter((item: DataItem) => {
     return item.type === compareType
-  }).sort((prev, cur)=>{
+  }).sort((prev, cur) => {
     return dayjs(prev.lastUpdatedTime).isBefore(dayjs(cur.lastUpdatedTime)) ? 1 : -1
   })
   finished.value = true;
@@ -52,7 +62,7 @@ onMounted(async () => {
 
 const handleSubmit = async (success: boolean) => {
   if (!success) {
-    return 
+    return
   }
   if (formData.id) {
     await ossClient.value?.update(formData.id, {
@@ -185,18 +195,24 @@ const handleItemClick = (item: DataItem) => {
             <img class="block w-8 h-8 rounded-2xl"
               src="https://lexmin.oss-cn-hangzhou.aliyuncs.com/statics/common/24385370.jpeg" />
             <!-- <var-button
-                color="transparent"
-                text-color="#fff"
-                round
-                text
-              >
-                <var-icon name="chevron-left" :size="24" />
-              </var-button> -->
+                      color="transparent"
+                      text-color="#fff"
+                      round
+                      text
+                    >
+                      <var-icon name="chevron-left" :size="24" />
+                    </var-button> -->
           </div>
         </template>
 
         <template #right>
           <var-menu>
+            <!-- 模式选择 -->
+            <var-button color="transparent" text-color="#fff" round text>
+              <var-icon v-if="viewMode === 'list'" name="check-circle-outline" @click="toggleViewMode" />
+              <var-icon v-else name="format-list-checkbox" @click="toggleViewMode" />
+            </var-button>
+            <!-- 主题切换 -->
             <var-button color="transparent" text-color="#fff" round text>
               <var-icon v-if="currentTheme === null" name="white-balance-sunny" @click="toggleTheme" />
               <var-icon v-else name="weather-night" @click="toggleTheme" />
@@ -205,7 +221,7 @@ const handleItemClick = (item: DataItem) => {
         </template>
       </var-app-bar>
       <!-- 头部 end -->
-
+      
       <!-- Tab 切换 start -->
       <var-tabs v-model:active="active" @change="handleTabChange">
         <var-tab name='work'>工作</var-tab>
@@ -213,21 +229,31 @@ const handleItemClick = (item: DataItem) => {
       </var-tabs>
       <!-- Tab 切换 end -->
 
-      <!-- 列表 start -->
-      <div class="flex-1 overflow-auto">
-        <var-list :finished="finished" v-model:loading="loading">
-          <var-cell :key="item" v-for="item in list">
-            <div class="flex items-center">
-              <var-checkbox v-model="item.done" @change="toggleCheck(item)"></var-checkbox>
-              <div class="flex-1 ellipsis-single" @click="() => handleItemClick(item)">
-                {{ item.content }}
+      <!-- 主内容区 start -->
+      <template v-if="viewMode === 'list'">
+
+        <!-- 列表 start -->
+        <div class="flex-1 overflow-auto">
+          <var-list :finished="finished" v-model:loading="loading">
+            <var-cell :key="item" v-for="item in list">
+              <div class="flex items-center">
+                <var-checkbox v-model="item.done" @change="toggleCheck(item)"></var-checkbox>
+                <div class="flex-1 ellipsis-single" @click="() => handleItemClick(item)">
+                  {{ item.content }}
+                </div>
+                <var-icon name="delete" @click="handleDelete(item)" />
               </div>
-              <var-icon name="delete" @click="handleDelete(item)" />
-            </div>
-          </var-cell>
-        </var-list>
-      </div>
-      <!-- 列表 end -->
+            </var-cell>
+          </var-list>
+        </div>
+        <!-- 列表 end -->
+      </template>
+      <template v-else>
+        <div class="flex-1 overflow-auto">
+          <Schedule :data="list" />
+        </div>
+      </template>
+      <!-- 主内容区 end -->
 
       <!-- 新建事项 Popup start -->
       <var-popup position="bottom" v-model:show="popoverShow" @close="closeEditPopup">
