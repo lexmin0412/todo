@@ -13,3 +13,4 @@
 - Vite 4.x
 - Varlet 2.x
 - TailwindCSS 3.x
+- Schedule-X 1.x
