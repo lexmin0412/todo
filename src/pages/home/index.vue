@@ -7,6 +7,7 @@ import OSSClient from "../../utils/oss";
 import { Dialog, Snackbar } from "@varlet/ui";
 import { LexminFooter } from "@lexmin0412/wc-vue";
 import Schedule from './../../components/schedule/index.vue'
+import DatepickerPopup from './../../components/datepicker-popup/index.vue'
 import { DataItem, UserCode, UserItem, ListWithUserItems } from "../../types";
 
 const currentTheme = ref();
@@ -98,6 +99,8 @@ const handleSubmit = async (success: boolean) => {
       content: formData.inputValue,
       type: formData.type as DataItem["type"],
       done: formData.done || false,
+			startTime: formData.startTime,
+			endTime: formData.endTime,
       createdTime: formData.createdTime,
       lastUpdatedTime: dayjs().format(TIME_FORMAT),
       users: formData.users,
@@ -111,6 +114,8 @@ const handleSubmit = async (success: boolean) => {
       createdTime: dayjs().format(TIME_FORMAT),
       lastUpdatedTime: dayjs().format(TIME_FORMAT),
       users: formData.users,
+			startTime: formData.startTime,
+			endTime: formData.endTime
     });
   }
   fetchList(ossClient.value as OSSClient);
@@ -125,6 +130,8 @@ const formData = reactive<{
   createdTime: string;
   lastUpdatedTime: string;
   users: UserCode[];
+	startTime: string
+	endTime: string
 }>({
   id: undefined,
   inputValue: "",
@@ -133,6 +140,8 @@ const formData = reactive<{
   createdTime: "",
   lastUpdatedTime: "",
   users: [],
+	startTime: "",
+	endTime: ""
 });
 const form = ref(null);
 
@@ -145,6 +154,8 @@ const closeEditPopup = () => {
   formData.createdTime = "";
   formData.lastUpdatedTime = "";
   formData.users = [];
+	formData.startTime = ""
+	formData.endTime = ""
 };
 
 const toggleCheck = async (item: DataItem) => {
@@ -155,6 +166,8 @@ const toggleCheck = async (item: DataItem) => {
     createdTime: item.createdTime,
     lastUpdatedTime: item.lastUpdatedTime,
     users: item.users,
+		startTime: item.startTime,
+		endTime: item.endTime
   });
   fetchList(ossClient.value as OSSClient);
 };
@@ -218,6 +231,8 @@ const handleItemClick = (item: DataItem) => {
   formData.type = item.type;
   formData.done = item.done;
   formData.users = item.users || [];
+	formData.startTime = item.startTime
+	formData.endTime = item.endTime
 };
 
 const showDoneData = ref(true); //  已办数据是否展示
@@ -347,6 +362,9 @@ const currentSort = ref<'createdTime' | 'lastUpdatedTime'>('createdTime')
               <var-option value="study" label="学习" />
               <var-option value="life" label="生活" />
             </var-select>
+
+						<DatepickerPopup text="开始时间" v-model="formData.startTime" />
+						<DatepickerPopup text="结束时间" v-model="formData.endTime" />
 
             <var-select multiple placeholder="请选择用户" v-model="formData.users" clearable
               :rules="[(v) => !!v.length || '用户不能为空']">

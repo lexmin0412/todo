@@ -19,14 +19,15 @@ const loadData = async () => {
         datePicker: {
             selectedDate: today,
         },
-        defaultView: viewWeek.name,
+		locale: 'zh-CN',
+        defaultView: viewMonthAgenda.name,
         events: props.data.map((item: DataItem) => {
             return {
                 ...item,
                 title: item.content,
                 description: item.content,
-                start: dayjs(item.lastUpdatedTime).format('YYYY-MM-DD HH:mm'),
-                end: dayjs(item.lastUpdatedTime).format('YYYY-MM-DD HH:mm'),
+                start: dayjs(item.startTime || item.lastUpdatedTime).format('YYYY-MM-DD HH:mm'),
+                end: dayjs(item.endTime || item.lastUpdatedTime).format('YYYY-MM-DD HH:mm'),
                 people: item.users,
                 location: "China",
             }

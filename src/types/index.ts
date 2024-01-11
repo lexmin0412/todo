@@ -24,6 +24,14 @@ export interface DataItem {
 	 * 指定用户
 	 */
 	users: UserCode[]
+	/**
+	 * 开始时间
+	 */
+	startTime: string
+	/**
+	 * 结束时间
+	 */
+	endTime: string
 }
 
 /**

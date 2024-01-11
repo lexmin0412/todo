@@ -7,12 +7,14 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    DatepickerPopup: typeof import('./src/components/datepicker-popup/index.vue')['default']
     Schedule: typeof import('./src/components/schedule/index.vue')['default']
     VarAppBar: typeof import('@varlet/ui')['_AppBarComponent']
     VarAvatar: typeof import('@varlet/ui')['_AvatarComponent']
     VarButton: typeof import('@varlet/ui')['_ButtonComponent']
     VarCell: typeof import('@varlet/ui')['_CellComponent']
     VarCheckbox: typeof import('@varlet/ui')['_CheckboxComponent']
+    VarDatePicker: typeof import('@varlet/ui')['_DatePickerComponent']
     VarFab: typeof import('@varlet/ui')['_FabComponent']
     VarForm: typeof import('@varlet/ui')['_FormComponent']
     VarIcon: typeof import('@varlet/ui')['_IconComponent']
@@ -28,5 +30,6 @@ declare module 'vue' {
     VarSwitch: typeof import('@varlet/ui')['_SwitchComponent']
     VarTab: typeof import('@varlet/ui')['_TabComponent']
     VarTabs: typeof import('@varlet/ui')['_TabsComponent']
+    VarTimePicker: typeof import('@varlet/ui')['_TimePickerComponent']
   }
 }
