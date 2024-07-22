@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import {ref, reactive} from "vue";
 import dayjs from "dayjs";
-import { StyleProvider, Themes } from "@varlet/ui";
-import { onMounted } from "vue";
+import {StyleProvider, Themes} from "@varlet/ui";
+import {onMounted} from "vue";
 import OSSClient from "../../utils/oss";
-import { Dialog, Snackbar } from "@varlet/ui";
-import { LexminFooter } from "@lexmin0412/wc-vue";
-import Schedule from './../../components/schedule/index.vue'
-import DatepickerPopup from './../../components/datepicker-popup/index.vue'
-import { DataItem, UserCode, UserItem, ListWithUserItems } from "../../types";
+import {Dialog, Snackbar} from "@varlet/ui";
+import {LexminFooter} from "@lexmin0412/wc-vue";
+import Schedule from "./../../components/schedule/index.vue";
+import DatepickerPopup from "./../../components/datepicker-popup/index.vue";
+import {DataItem, UserCode, UserItem, ListWithUserItems} from "../../types";
 
 const currentTheme = ref();
 
@@ -18,16 +18,16 @@ function toggleTheme() {
 }
 
 function toggleViewMode() {
-  if (viewMode.value === 'list') {
-    viewMode.value = 'calender'
+  if (viewMode.value === "list") {
+    viewMode.value = "calender";
   } else {
-    viewMode.value = 'list'
+    viewMode.value = "list";
   }
 }
 
-const TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss'
+const TIME_FORMAT = "YYYY-MM-DD HH:mm:ss";
 
-const viewMode = ref<'list' | 'calender'>('list')
+const viewMode = ref<"list" | "calender">("list");
 
 const loading = ref(false);
 const finished = ref(false);
@@ -51,7 +51,9 @@ const fetchList = async (ossClient: OSSClient, type?: DataItem["type"]) => {
       return item.type === compareType;
     })
     .sort((prev, cur) => {
-      return dayjs(prev[currentSort.value]).isBefore(dayjs(cur[currentSort.value]))
+      return dayjs(prev[currentSort.value]).isBefore(
+        dayjs(cur[currentSort.value])
+      )
         ? 1
         : -1;
     })
@@ -99,8 +101,8 @@ const handleSubmit = async (success: boolean) => {
       content: formData.inputValue,
       type: formData.type as DataItem["type"],
       done: formData.done || false,
-			startTime: formData.startTime,
-			endTime: formData.endTime,
+      startTime: formData.startTime,
+      endTime: formData.endTime,
       createdTime: formData.createdTime,
       lastUpdatedTime: dayjs().format(TIME_FORMAT),
       users: formData.users,
@@ -114,8 +116,8 @@ const handleSubmit = async (success: boolean) => {
       createdTime: dayjs().format(TIME_FORMAT),
       lastUpdatedTime: dayjs().format(TIME_FORMAT),
       users: formData.users,
-			startTime: formData.startTime,
-			endTime: formData.endTime
+      startTime: formData.startTime,
+      endTime: formData.endTime,
     });
   }
   fetchList(ossClient.value as OSSClient);
@@ -130,8 +132,8 @@ const formData = reactive<{
   createdTime: string;
   lastUpdatedTime: string;
   users: UserCode[];
-	startTime: string
-	endTime: string
+  startTime: string;
+  endTime: string;
 }>({
   id: undefined,
   inputValue: "",
@@ -140,8 +142,8 @@ const formData = reactive<{
   createdTime: "",
   lastUpdatedTime: "",
   users: [],
-	startTime: "",
-	endTime: ""
+  startTime: "",
+  endTime: "",
 });
 const form = ref(null);
 
@@ -154,8 +156,8 @@ const closeEditPopup = () => {
   formData.createdTime = "";
   formData.lastUpdatedTime = "";
   formData.users = [];
-	formData.startTime = ""
-	formData.endTime = ""
+  formData.startTime = "";
+  formData.endTime = "";
 };
 
 const toggleCheck = async (item: DataItem) => {
@@ -166,8 +168,8 @@ const toggleCheck = async (item: DataItem) => {
     createdTime: item.createdTime,
     lastUpdatedTime: item.lastUpdatedTime,
     users: item.users,
-		startTime: item.startTime,
-		endTime: item.endTime
+    startTime: item.startTime,
+    endTime: item.endTime,
   });
   fetchList(ossClient.value as OSSClient);
 };
@@ -193,18 +195,27 @@ const configFormData = reactive({
   accessKeyId: "",
   accessKeySecret: "",
 });
-const handleConfigSubmit = async (isValid: boolean) => {
-  if (!isValid) {
-    return;
+const handleConfigSubmit = async (isValid: boolean, ...restParams) => {
+  console.log("restParams", isValid, configFormData);
+  const res = await fetch("https://auth.cellerchan.top/guard/api/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(configFormData),
+  }).then((res) => res.json());
+  if (res?.code === 0) {
+    localStorage.setItem(
+      "oss-config",
+      JSON.stringify({
+        ...res.data,
+      })
+    );
+    initOSSClient();
+    configPopupVisible.value = false;
+  } else {
+    console.error(res?.message);
   }
-  localStorage.setItem(
-    "oss-config",
-    JSON.stringify({
-      ...configFormData,
-    })
-  );
-  initOSSClient();
-  configPopupVisible.value = false;
 };
 // 配置弹出框 end
 
@@ -231,8 +242,8 @@ const handleItemClick = (item: DataItem) => {
   formData.type = item.type;
   formData.done = item.done;
   formData.users = item.users || [];
-	formData.startTime = item.startTime
-	formData.endTime = item.endTime
+  formData.startTime = item.startTime;
+  formData.endTime = item.endTime;
 };
 
 const showDoneData = ref(true); //  已办数据是否展示
@@ -246,7 +257,7 @@ const go2Github = () => {
   window.open("https://github.com/lexmin0412/todo");
 };
 
-const currentSort = ref<'createdTime' | 'lastUpdatedTime'>('createdTime')
+const currentSort = ref<"createdTime" | "lastUpdatedTime">("createdTime");
 </script>
 
 <template>
@@ -256,8 +267,10 @@ const currentSort = ref<'createdTime' | 'lastUpdatedTime'>('createdTime')
       <var-app-bar title="待办清单">
         <template #left>
           <div class="flex mr-2">
-            <img class="block w-8 h-8 rounded-2xl"
-              src="https://lexmin.oss-cn-hangzhou.aliyuncs.com/statics/common/24385370.jpeg" />
+            <img
+              class="block w-8 h-8 rounded-2xl"
+              src="https://lexmin.oss-cn-hangzhou.aliyuncs.com/statics/common/24385370.jpeg"
+            />
           </div>
         </template>
 
@@ -265,15 +278,30 @@ const currentSort = ref<'createdTime' | 'lastUpdatedTime'>('createdTime')
           <var-menu>
             <!-- 模式选择 -->
             <var-button color="transparent" text-color="#fff" round text>
-              <var-icon v-if="viewMode === 'list'" name="check-circle-outline" @click="toggleViewMode" />
-              <var-icon v-else name="format-list-checkbox" @click="toggleViewMode" />
+              <var-icon
+                v-if="viewMode === 'list'"
+                name="check-circle-outline"
+                @click="toggleViewMode"
+              />
+              <var-icon
+                v-else
+                name="format-list-checkbox"
+                @click="toggleViewMode"
+              />
             </var-button>
             <!-- 主题切换 -->
             <var-button color="transparent" text-color="#fff" round text>
-              <var-icon v-if="currentTheme === null" name="white-balance-sunny" @click="toggleTheme" />
+              <var-icon
+                v-if="currentTheme === null"
+                name="white-balance-sunny"
+                @click="toggleTheme"
+              />
               <var-icon v-else name="weather-night" @click="toggleTheme" />
             </var-button>
-            <var-menu-select v-model="currentSort" @update:model-value="() => fetchList(ossClient as OSSClient)">
+            <var-menu-select
+              v-model="currentSort"
+              @update:model-value="() => fetchList(ossClient as OSSClient)"
+            >
               <var-button color="transparent" text-color="#fff" round text>
                 <var-icon name="cog-outline" />
               </var-button>
@@ -306,8 +334,14 @@ const currentSort = ref<'createdTime' | 'lastUpdatedTime'>('createdTime')
           <var-list :finished="finished" v-model:loading="loading">
             <var-cell :key="item" v-for="item in list.unDone">
               <div class="flex items-center">
-                <var-checkbox v-model="item.done" @change="toggleCheck(item)"></var-checkbox>
-                <div class="flex-1 ellipsis-single flex items-center" @click="() => handleItemClick(item)">
+                <var-checkbox
+                  v-model="item.done"
+                  @change="toggleCheck(item)"
+                ></var-checkbox>
+                <div
+                  class="flex-1 ellipsis-single flex items-center"
+                  @click="() => handleItemClick(item)"
+                >
                   <div class="mr-2 flex-1 overflow-hidden ellipsis-single">
                     {{ item.content }}
                   </div>
@@ -324,11 +358,21 @@ const currentSort = ref<'createdTime' | 'lastUpdatedTime'>('createdTime')
           <div class="px-3 pt-3 font-semibold flex items-center">
             已办 <var-switch v-model="showDoneData" class="ml-2" />
           </div>
-          <var-list :hidden="!showDoneData" :finished="finished" v-model:loading="loading">
+          <var-list
+            :hidden="!showDoneData"
+            :finished="finished"
+            v-model:loading="loading"
+          >
             <var-cell :key="item" v-for="item in list.done">
               <div class="flex items-center">
-                <var-checkbox v-model="item.done" @change="toggleCheck(item)"></var-checkbox>
-                <div class="flex-1 ellipsis-single flex items-center" @click="() => handleItemClick(item)">
+                <var-checkbox
+                  v-model="item.done"
+                  @change="toggleCheck(item)"
+                ></var-checkbox>
+                <div
+                  class="flex-1 ellipsis-single flex items-center"
+                  @click="() => handleItemClick(item)"
+                >
                   <div class="mr-2 flex-1 overflow-hidden ellipsis-single">
                     {{ item.content }}
                   </div>
@@ -350,24 +394,51 @@ const currentSort = ref<'createdTime' | 'lastUpdatedTime'>('createdTime')
       <!-- 主内容区 end -->
 
       <!-- 新建事项 Popup start -->
-      <var-popup position="bottom" v-model:show="popoverShow" @close="closeEditPopup">
+      <var-popup
+        position="bottom"
+        v-model:show="popoverShow"
+        @close="closeEditPopup"
+      >
         <div class="flex items-center px-4 py-4">
-          <var-form @submit="handleSubmit" class="w-full" ref="form" scroll-to-error="start">
-            <var-input autoFocus class="w-full" variant="outlined" placeholder="输入待办内容" clearable
-              v-model="formData.inputValue" textarea :rules="[(v) => v.length > 0 || '文本不能为空']" />
+          <var-form
+            @submit="handleSubmit"
+            class="w-full"
+            ref="form"
+            scroll-to-error="start"
+          >
+            <var-input
+              autoFocus
+              class="w-full"
+              variant="outlined"
+              placeholder="输入待办内容"
+              clearable
+              v-model="formData.inputValue"
+              textarea
+              :rules="[(v) => v.length > 0 || '文本不能为空']"
+            />
 
-            <var-select v-if="!activeTab" placeholder="请选择类型" v-model="formData.type" clearable
-              :rules="[(v) => !!v || '类型不能为空']">
+            <var-select
+              v-if="!activeTab"
+              placeholder="请选择类型"
+              v-model="formData.type"
+              clearable
+              :rules="[(v) => !!v || '类型不能为空']"
+            >
               <var-option value="work" label="工作" />
               <var-option value="study" label="学习" />
               <var-option value="life" label="生活" />
             </var-select>
 
-						<DatepickerPopup text="开始时间" v-model="formData.startTime" />
-						<DatepickerPopup text="结束时间" v-model="formData.endTime" />
+            <DatepickerPopup text="开始时间" v-model="formData.startTime" />
+            <DatepickerPopup text="结束时间" v-model="formData.endTime" />
 
-            <var-select multiple placeholder="请选择用户" v-model="formData.users" clearable
-              :rules="[(v) => !!v.length || '用户不能为空']">
+            <var-select
+              multiple
+              placeholder="请选择用户"
+              v-model="formData.users"
+              clearable
+              :rules="[(v) => !!v.length || '用户不能为空']"
+            >
               <var-option value="viola" label="小黄" />
               <var-option value="lexmin" label="小张" />
             </var-select>
@@ -381,21 +452,30 @@ const currentSort = ref<'createdTime' | 'lastUpdatedTime'>('createdTime')
       <!-- 新建事项 Popup end -->
 
       <!-- OSS 配置 Popup start -->
-      <var-popup position="bottom" :close-on-click-overlay="false" v-model:show="configPopupVisible">
+      <var-popup
+        position="bottom"
+        :close-on-click-overlay="false"
+        v-model:show="configPopupVisible"
+      >
         <div class="flex items-center px-4 py-4">
-          <var-form @submit="handleConfigSubmit" class="w-full" ref="configForm" scroll-to-error="start">
-            <var-select placeholder="请选择地域" v-model="configFormData.region" :rules="[(v) => !!v || '地域不能为空']">
-              <var-option label="杭州" value="oss-cn-hangzhou" />
-              <var-option label="深圳" value="oss-cn-shenzhen" />
-              <var-option label="上海" value="oss-cn-shanghai" />
-              <var-option label="北京" value="oss-cn-beijing" />
-            </var-select>
-            <var-input placeholder="请输入 bucket" clearable v-model="configFormData.bucket"
-              :rules="[(v) => !!v || 'bucket 不能为空']" />
-            <var-input placeholder="请输入 accesskeyId" clearable v-model="configFormData.accessKeyId"
-              :rules="[(v) => !!v || 'accessKeyId 不能为空']" />
-            <var-input placeholder="请输入 accesskeySecret" clearable v-model="configFormData.accessKeySecret"
-              :rules="[(v) => !!v || 'accessKeySecret 不能为空']" />
+          <var-form
+            @submit="handleConfigSubmit"
+            class="w-full"
+            ref="configForm"
+            scroll-to-error="start"
+          >
+            <var-input
+              placeholder="请输入用户名"
+              clearable
+              v-model="configFormData.userName"
+              :rules="[(v) => !!v || '']"
+            />
+            <var-input
+              placeholder="请输入密码"
+              clearable
+              v-model="configFormData.password"
+              :rules="[(v) => !!v || 'password不能为空']"
+            />
             <var-button class="mt-4" block type="primary" native-type="submit">
               提交
             </var-button>
