@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import {ref, reactive} from "vue";
 import dayjs from "dayjs";
-import {StyleProvider, Themes} from "@varlet/ui";
+import {StyleProvider, Themes, Dialog, Snackbar, ActionSheet} from "@varlet/ui";
 import {onMounted} from "vue";
 import OSSClient from "../../utils/oss";
-import {Dialog, Snackbar} from "@varlet/ui";
 import {LexminFooter} from "@lexmin0412/wc-vue";
 import Schedule from "./../../components/schedule/index.vue";
 import DatepickerPopup from "./../../components/datepicker-popup/index.vue";
@@ -43,7 +42,13 @@ const popoverShow = ref(false);
 let ossClient = ref<OSSClient>();
 
 const fetchList = async (ossClient: OSSClient, type?: DataItem["type"]) => {
-  const result = await ossClient?.getList();
+	let result
+	try {
+		result = await ossClient?.getList();
+	} catch (error) {
+		console.error('获取待办列表失败', error)
+		return
+	}
   const fullList = JSON.parse(result.content.toString()).list;
   const compareType = type || activeTab.value;
   const displayList: ListWithUserItems = (fullList as DataItem[])
@@ -73,7 +78,13 @@ const fetchList = async (ossClient: OSSClient, type?: DataItem["type"]) => {
 
 const userList = ref<UserItem[]>([]);
 const fetchUsers = async (ossClient: OSSClient) => {
-  const result = await ossClient?.getUsers();
+	let result
+	try {
+		result = await ossClient?.getUsers();
+	} catch (error) {
+		console.error('获取用户列表失败', error)
+		return
+	}
   const parsedList = JSON.parse(result.content.toString()).list;
   userList.value = parsedList;
 };
@@ -195,7 +206,7 @@ const configFormData = reactive({
   accessKeyId: "",
   accessKeySecret: "",
 });
-const handleConfigSubmit = async (isValid: boolean, ...restParams) => {
+const handleConfigSubmit = async (isValid: boolean) => {
   console.log("restParams", isValid, configFormData);
   const res = await fetch("https://auth.cellerchan.top/guard/api/login", {
     method: "POST",
@@ -257,6 +268,23 @@ const go2Github = () => {
   window.open("https://github.com/lexmin0412/todo");
 };
 
+const handleUserIconClick = async() => {
+	const action = await ActionSheet({
+    actions: [
+      {
+        name: '重新登录',
+        icon: 'account-circle',
+      },
+    ]
+  })
+	console.log('action', action)
+	// @ts-ignore
+	if (action.name === '重新登录') {
+		localStorage.removeItem('oss-config')
+		initOSSClient()
+	}
+}
+
 const currentSort = ref<"createdTime" | "lastUpdatedTime">("createdTime");
 </script>
 
@@ -276,6 +304,10 @@ const currentSort = ref<"createdTime" | "lastUpdatedTime">("createdTime");
 
         <template #right>
           <var-menu>
+						<!-- 用户 -->
+						<var-button color="transparent" text-color="#fff" round text>
+							<var-icon name="account-circle" @click="handleUserIconClick" />
+						</var-button>
             <!-- 模式选择 -->
             <var-button color="transparent" text-color="#fff" round text>
               <var-icon

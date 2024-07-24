@@ -1,5 +1,6 @@
 import { DataItem } from "../types";
 import OSS from "ali-oss";
+import { Snackbar } from "@varlet/ui";
 
 export interface OssClientInitProps {
 	/**
@@ -42,6 +43,14 @@ class OssClient {
 			headers: {
 				'Content-type': 'application/json'
 			}
+		}).catch(err => {
+			if (err.code === 'InvalidAccessKeyId') {
+				Snackbar({
+					content: "accessKeyId 错误",
+					type: "error",
+				})
+			}
+			return Promise.reject(err)
 		})
 	}
 
